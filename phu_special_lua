@@ -1,0 +1,82 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+-- Bảng màu tối (DarkTheme) chạy rất mượt và không bao giờ lo bị lỗi không lên bảng
+local Window = Library.CreateLib("TRẦN ANH PHÚ HUB", "DarkTheme")
+
+-- 1. BẬT SẴN CHỐNG BAN (ANTI-BAN)
+getgenv().AntiBan = true
+
+-- 2. TAB CHÍNH: CÀY CẤP & SĂN TRÁI
+local Tab1 = Window:NewTab("Main Farm")
+local Section1 = Tab1:NewSection("Cày Cấp 2600 - 2750")
+
+-- CHỌN VŨ KHÍ MELEE
+local Weapon = "Melee"
+Section1:NewDropdown("Chọn Vũ Khí", "Chọn Melee để đánh quái", {"Melee", "Sword", "Fruit"}, function(v)
+    Weapon = v
+end)
+
+-- NÚT BẬT TẮT CÀY CẤP
+Section1:NewToggle("Auto Farm Level", "Tự nhận Quest + Bay + Đánh bằng Melee", function(state)
+    _G.AutoFarm = state
+    spawn(function()
+        while _G.AutoFarm do wait(0.5)
+            pcall(function()
+                -- Tự động lấy võ Melee ra đấm quái
+                local tool = game.Players.LocalPlayer.Backpack:FindFirstChild(Weapon) or game.Players.LocalPlayer.Character:FindFirstChild(Weapon)
+                if tool and not game.Players.LocalPlayer.Character:FindFirstChild(Weapon) then
+                    game.Players.LocalPlayer.Character.Humanoid:EquipTool(tool)
+                end
+                
+                -- Động cơ tự động click chuột để chém quái
+                local VirtualUser = game:GetService("VirtualUser")
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(851, 158))
+            end)
+        end
+    end)
+end)
+
+-- TAB ĐẶC SẢN SĂN TRÁI & ĐỔI SERVER
+local Tab2 = Window:NewTab("Săn Trái Spawn")
+local Section2 = Tab2:NewSection("Đặc Sản Săn Trái & Server Hop")
+
+Section2:NewToggle("Bật Săn Trái Spawn", "Thấy trái là tự động bay lại nhặt", function(state)
+    _G.AutoCollect = state
+    spawn(function()
+        while _G.AutoCollect do wait(0.5)
+            pcall(function()
+                local khongCoTrai = true
+                for i,v in pairs(game.Workspace:GetChildren()) do
+                    if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                        khongCoTrai = false
+                        -- Lệnh bay (Tween) sát đất đến chỗ trái ác quỷ
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+                    end
+                end
+                
+                -- Nếu quét bản đồ không có trái -> Tự động đổi Server luôn
+                if khongCoTrai and _G.AutoHop then
+                    local HttpService = game:GetService("HttpService")
+                    local TPS = game:GetService("TeleportService")
+                    local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+                    local Data = HttpService:JSONDecode(game:HttpGet(Api))
+                    for _, server in pairs(Data.data) do
+                        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                            TPS:TeleportToPlaceInstance(game.PlaceId, server.id, game.Players.LocalPlayer)
+                            break
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+Section2:NewToggle("Tự Đổi Server Khi Hết Trái", "Bật kèm với nút trên để nhảy server", function(state)
+    _G.AutoHop = state
+end)
+
+-- 3. NÚT DẤU TRỪ (-) THU NHỎ SÁT NÚT X ĐÓNG LẠI
+Section1:NewKeybind("Thu nhỏ bảng (-)", "Nhấn RightControl hoặc Icon nhỏ để ẩn/hiện bảng vuông", Enum.KeyCode.RightControl, function()
+    Library:ToggleUI()
+end)
